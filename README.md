@@ -3,7 +3,6 @@ Local desktop lab for downloading, AI upscaling and analyzing audio sources.
 
 # `README.md`
 
-````markdown
 # Audio Upscale Lab
 
 **Audio Upscale Lab** is a local desktop application for experimenting with AI-based audio restoration and measuring what these models actually change.
