@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Upscale Lab</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">◎</div>
+
+        <div>
+          <h1>Audio Upscale Lab</h1>
+          <p>Télécharger · préparer · analyser · augmenter</p>
+        </div>
+      </div>
+
+      <div class="dependency-strip" id="dependencyStrip">
+        <span class="chip chip-muted">Initialisation...</span>
+      </div>
+    </header>
+
+    <main class="grid">
+
+      <!-- COLONNE GAUCHE : PIPELINE -->
+      <section class="panel hero-panel">
+        <div class="panel-label">V1 — Source YouTube</div>
+
+        <h2>Créer une source de travail audio propre</h2>
+
+        <p class="intro">
+          Colle une URL YouTube. L’application récupère le meilleur flux audio disponible,
+          l’archive localement, puis crée une référence WAV 48 kHz / 24 bits stéréo.
+        </p>
+
+        <div class="url-form">
+          <input
+            id="youtubeUrl"
+            type="text"
+            placeholder="https://www.youtube.com/watch?v=..."
+            spellcheck="false"
+          />
+
+          <button id="prepareButton">
+            <span id="prepareButtonLabel">Préparer la source</span>
+          </button>
+        </div>
+
+        <div class="pipeline">
+          <div class="pipeline-step">
+            <span>1</span>
+            <strong>Métadonnées</strong>
+            <small>Titre, identifiant, durée</small>
+          </div>
+
+          <div class="pipeline-step">
+            <span>2</span>
+            <strong>Download</strong>
+            <small>Meilleur flux audio</small>
+          </div>
+
+          <div class="pipeline-step">
+            <span>3</span>
+            <strong>WAV 48k</strong>
+            <small>Référence locale 24 bits</small>
+          </div>
+
+          <div class="pipeline-step">
+            <span>4</span>
+            <strong>Projet</strong>
+            <small>Dossier + project.json</small>
+          </div>
+        </div>
+
+        <div class="status-card" id="statusCard">
+          <div class="status-dot"></div>
+
+          <div>
+            <strong id="statusTitle">Prêt</strong>
+            <p id="statusMessage">Le pont Python est en attente.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLONNE DROITE : RÉSULTAT -->
+      <section class="panel result-panel">
+        <div class="panel-label">Projet généré</div>
+
+        <div id="emptyResult" class="empty-state">
+          <div>
+            <div class="empty-icon">♫</div>
+            <p>Aucun projet généré pour l’instant.</p>
+          </div>
+        </div>
+
+        <div id="projectResult" class="project-result hidden">
+          <div class="project-title-block">
+            <h2 id="projectTitle">—</h2>
+            <p id="projectMeta">—</p>
+          </div>
+
+          <div class="file-grid">
+            <article class="file-card">
+              <span class="file-kind">Source archivée</span>
+              <strong id="sourceFileName">—</strong>
+              <p id="sourceTechnical">—</p>
+            </article>
+
+            <article class="file-card">
+              <span class="file-kind">Référence de travail</span>
+              <strong id="referenceFileName">—</strong>
+              <p id="referenceTechnical">—</p>
+            </article>
+          </div>
+
+          <div class="action-row">
+            <button class="secondary-button" id="openProjectButton">
+              Ouvrir le dossier projet
+            </button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- AUDIO SR : UPSCALE -->
+      <section class="panel upscale-panel hidden" id="upscalePanel">
+        <div class="panel-label">V2 — AudioSR</div>
+
+        <div class="upscale-header">
+          <div>
+            <h2>Upscaler la référence audio</h2>
+            <p class="intro upscale-intro">
+              AudioSR reconstruit une version enrichie du WAV de référence.
+              Les réglages ci-dessous seront conservés dans le projet pour comparer
+              plusieurs variantes ensuite.
+            </p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <label class="setting-field">
+            <span>Guidance scale</span>
+            <input
+              id="audiosrGuidanceScale"
+              type="number"
+              min="1"
+              max="20"
+              step="0.1"
+              value="3.5"
+            />
+            <small>Plus haut = traitement plus affirmé.</small>
+          </label>
+
+          <label class="setting-field">
+            <span>Input cutoff</span>
+            <select id="audiosrInputCutoff">
+              <option value="12000" selected>12 000 Hz — agressif</option>
+              <option value="14000">14 000 Hz — intermédiaire</option>
+              <option value="16000">16 000 Hz — prudent</option>
+            </select>
+            <small>Plus haut = moins de spectre reconstruit.</small>
+          </label>
+
+          <label class="setting-field">
+            <span>DDIM steps</span>
+            <input
+              id="audiosrDdimSteps"
+              type="number"
+              min="10"
+              max="500"
+              step="10"
+              value="50"
+            />
+            <small>Qualité / temps de calcul.</small>
+          </label>
+
+          <label class="setting-field">
+            <span>Seed</span>
+            <input
+              id="audiosrSeed"
+              type="number"
+              min="0"
+              step="1"
+              value="0"
+            />
+            <small>0 = seed aléatoire.</small>
+          </label>
+
+          <label class="setting-field">
+            <span>Chunk size</span>
+            <input
+              id="audiosrChunkSize"
+              type="number"
+              min="1"
+              max="10.24"
+              step="0.01"
+              value="5.12"
+            />
+            <small>5.12 s recommandé.</small>
+          </label>
+
+          <label class="setting-field">
+            <span>Overlap</span>
+            <input
+              id="audiosrOverlap"
+              type="number"
+              min="0"
+              max="0.5"
+              step="0.01"
+              value="0.04"
+            />
+            <small>Chevauchement entre chunks.</small>
+          </label>
+        </div>
+
+        <label class="checkbox-field">
+          <input id="audiosrMultiband" type="checkbox" />
+          <span>
+            <strong>Activer le multiband ensemble</strong>
+            <small>
+              Préserve davantage l’original et ne mélange que la partie haute reconstruite.
+            </small>
+          </span>
+        </label>
+
+        <div class="upscale-actions">
+          <button id="startAudiosrButton">
+            <span id="startAudiosrButtonLabel">Lancer l’upscale AudioSR</span>
+          </button>
+
+          <button class="secondary-button hidden" id="openUpscaleFolderButton">
+            Ouvrir le dossier de sortie
+          </button>
+        </div>
+
+        <div class="job-card" id="audiosrJobCard">
+          <div class="job-header">
+            <div>
+              <strong id="audiosrJobTitle">Aucun job AudioSR lancé</strong>
+              <p id="audiosrJobMessage">
+                Le traitement apparaîtra ici avec sa progression.
+              </p>
+            </div>
+
+            <div class="job-percent" id="audiosrJobPercent">0%</div>
+          </div>
+
+          <div class="progress-track">
+            <div class="progress-bar" id="audiosrProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="upscale-result hidden" id="audiosrResult">
+          <article class="file-card">
+            <span class="file-kind">Rendu AudioSR</span>
+            <strong id="audiosrOutputFileName">—</strong>
+            <p id="audiosrOutputTechnical">—</p>
+          </article>
+        </div>
+
+        <div class="subsection-label">Journal AudioSR</div>
+        <pre id="audiosrLogOutput">En attente d’un traitement...</pre>
+      </section>
+
+      <!-- ANALYSE COMPARATIVE -->
+      <section class="panel analysis-panel hidden" id="analysisPanel">
+        <div class="panel-label">V3 — Analyse comparative</div>
+
+        <div class="analysis-header">
+          <div>
+            <h2>Mesurer ce qu’AudioSR a réellement modifié</h2>
+            <p class="intro analysis-intro">
+              L’analyse compare la référence WAV d’origine et le rendu AudioSR :
+              spectre moyen, résidu, ajout d’énergie par bandes, zoom hautes fréquences,
+              spectrogrammes et fichiers de différence écoutables.
+            </p>
+          </div>
+        </div>
+
+        <div class="analysis-actions">
+          <button id="startAnalysisButton">
+            <span id="startAnalysisButtonLabel">Analyser ce rendu</span>
+          </button>
+
+          <button class="secondary-button hidden" id="openAnalysisFolderButton">
+            Ouvrir le dossier d’analyse
+          </button>
+        </div>
+
+        <div class="job-card" id="analysisJobCard">
+          <div class="job-header">
+            <div>
+              <strong id="analysisJobTitle">Aucune analyse lancée</strong>
+              <p id="analysisJobMessage">
+                Le rapport comparatif apparaîtra ici avec sa progression.
+              </p>
+            </div>
+
+            <div class="job-percent" id="analysisJobPercent">0%</div>
+          </div>
+
+          <div class="progress-track">
+            <div class="progress-bar" id="analysisProgressBar"></div>
+          </div>
+        </div>
+
+        <div class="analysis-result hidden" id="analysisResult">
+          <div class="analysis-summary-grid">
+            <article class="metric-card">
+              <span>Résidu global</span>
+              <strong id="analysisResidualPct">—</strong>
+              <small>RMS du résidu / RMS original</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Résidu relatif</span>
+              <strong id="analysisResidualDb">—</strong>
+              <small>Écart RMS traité − original</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Centroïde spectral</span>
+              <strong id="analysisCentroidDelta">—</strong>
+              <small>Déplacement vers l’aigu</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Rolloff 95 %</span>
+              <strong id="analysisRolloffDelta">—</strong>
+              <small>Extension moyenne du spectre</small>
+            </article>
+          </div>
+
+          <div class="subsection-label">Synthèse hautes fréquences</div>
+
+          <div class="hf-summary-table-wrap">
+            <table class="hf-summary-table">
+              <thead>
+                <tr>
+                  <th>Bande</th>
+                  <th>Poids original</th>
+                  <th>Poids traité</th>
+                  <th>Écart</th>
+                  <th>Gain de puissance</th>
+                </tr>
+              </thead>
+
+              <tbody id="analysisHighFrequencyRows">
+                <tr>
+                  <td colspan="5">En attente d’analyse.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection-label">Journal d’analyse</div>
+        <pre id="analysisLogOutput">En attente d’une analyse...</pre>
+      </section>
+      
+      <!-- BAS : JOURNAL -->
+      <section class="panel log-panel">
+        <div class="panel-label">Journal</div>
+        <pre id="logOutput">En attente...</pre>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

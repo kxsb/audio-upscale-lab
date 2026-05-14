@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+
+# Virtual envs / Conda locals
+.venv/
+venv/
+env/
+conda_env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs temporaires
+*.log
+
+# Workspace généré par l'application
+workspace/projects/*
+!workspace/projects/.gitkeep
+
+# Éventuels fichiers temporaires audio
+*.tmp
+*.temp
+
+# Exports / outputs générés hors workspace
+outputs/
+analysis_output/
+audiosr_output/
