@@ -1,7 +1,6 @@
 
 # `ROADMAP.md`
 
-```markdown
 # Audio Upscale Lab — Roadmap
 
 This roadmap tracks the evolution of **Audio Upscale Lab** from a functional local prototype into a more complete AI audio restoration and evaluation environment.
